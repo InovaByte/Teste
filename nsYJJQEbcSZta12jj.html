@@ -1,0 +1,542 @@
+<html><head><base href="https://bar-esperanca-fila.firebaseapp.com/?">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bar Esperança</title>
+<style>
+  :root {
+    --primary-color: #2c3e50;
+    --secondary-color: #f1c40f;
+    --bg-color: #ecf0f1;
+    --text-color: #34495e;
+  }
+  
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 16px;
+  }
+  
+  .container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+  
+  h1, h2 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-top: 0;
+  }
+  
+  h1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+  }
+
+  h1 img {
+    width: 40px;
+    height: 40px;
+  }
+
+  form, #queueInfo, #feedbackForm, #reservationForm {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--primary-color);
+  }
+  
+  input, select, textarea {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  button {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    width: 100%;
+  }
+  
+  button:hover {
+    background-color: #f39c12;
+  }
+  
+  #queueInfo, #reservationInfo {
+    text-align: center;
+  }
+  
+  #feedbackForm {
+    display: none;
+  }
+
+  #queueList {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-top: 1rem;
+  }
+
+  #queueList h3 {
+    margin-top: 0;
+  }
+
+  #queueList ol {
+    padding-left: 1.25rem;
+  }
+
+  #queueList li {
+    margin-bottom: 0.3rem;
+  }
+
+  #queueList li .position-number {
+    font-weight: bold;
+    color: var(--secondary-color);
+  }
+
+  #queueList li .position-number.current-user {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  
+  .tab {
+    padding: 0.5rem 1rem;
+    background-color: var(--primary-color);
+    color: #fff;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease;
+    font-size: 0.9rem;
+  }
+  
+  .tab:hover, .tab.active {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+  }
+
+  @media (min-width: 768px) {
+    .container {
+      max-width: 768px;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    h1 img {
+      width: 50px;
+      height: 50px;
+    }
+
+    form, #queueInfo, #feedbackForm, #reservationForm {
+      padding: 1.5rem;
+    }
+
+    button {
+      width: auto;
+    }
+
+    .tabs {
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container {
+      max-width: 1024px;
+    }
+
+    .form-container {
+      display: flex;
+      gap: 2rem;
+    }
+
+    #queueForm, #reservationForm {
+      flex: 1;
+    }
+  }
+</style>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <img src="/a/892c378b-cacc-4d5f-b599-87bbadeea663" alt="Logo do Bar & Choperia Esperança" width="40" height="40">
+      Bar Esperança
+    </h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('queue')">Fila</button>
+      <button class="tab" onclick="showTab('reservation')">Reserva</button>
+    </div>
+    
+    <div id="queueSection">
+      <form id="queueForm">
+        <h2>Entrar na Fila</h2>
+        <label for="name">Nome:</label>
+        <input type="text" id="name" required>
+        
+        <label for="people">Número de pessoas:</label>
+        <select id="people" required>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5+</option>
+        </select>
+        
+        <label for="phone">Telefone:</label>
+        <input type="tel" id="phone" required>
+        
+        <button type="submit">Entrar na Fila</button>
+      </form>
+      
+      <div id="queueInfo"></div>
+      <div id="queueList"></div>
+      
+      <form id="feedbackForm">
+        <h2>Feedback da Experiência</h2>
+        <label for="rating">Avaliação:</label>
+        <select id="rating" required>
+          <option value="5">Excelente</option>
+          <option value="4">Muito Bom</option>
+          <option value="3">Bom</option>
+          <option value="2">Regular</option>
+          <option value="1">Ruim</option>
+        </select>
+        
+        <label for="comment">Comentário:</label>
+        <textarea id="comment" rows="4"></textarea>
+        
+        <button type="submit">Enviar Feedback</button>
+      </form>
+    </div>
+    
+    <div id="reservationSection" style="display: none;">
+      <form id="reservationForm">
+        <h2>Fazer Reserva</h2>
+        <p><strong>Observação:</strong> Tolerância de chegada até 19h, caso contrário a reserva será cancelada. Reservas apenas de terça a quinta-feira, somente para o período noturno.</p>
+        
+        <label for="reservationName">Nome:</label>
+        <input type="text" id="reservationName" required>
+        
+        <label for="reservationPeople">Número de pessoas:</label>
+        <select id="reservationPeople" required>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7+</option>
+        </select>
+        
+        <label for="reservationPhone">Telefone:</label>
+        <input type="tel" id="reservationPhone" required>
+        
+        <label for="reservationDate">Data:</label>
+        <input type="date" id="reservationDate" required>
+        
+        <button type="submit">Fazer Reserva</button>
+      </form>
+      
+      <div id="reservationInfo"></div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDX3CJTu9LbUNXI4pb-6mJtd4x_lE6pL1k",
+      authDomain: "meubar-11160.firebaseapp.com",
+      projectId: "meubar-11160",
+      storageBucket: "meubar-11160.appspot.com",
+      messagingSenderId: "629964143626",
+      appId: "1:629964143626:web:02e3f04bda21e1e77373f3",
+      measurementId: "G-FLMGEE90CD"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    let userId;
+
+    function isUserInQueue() {
+      return !!getQueueInfo();
+    }
+
+    function showTab(tabName) {
+      document.getElementById('queueSection').style.display = tabName === 'queue' ? 'block' : 'none';
+      document.getElementById('reservationSection').style.display = tabName === 'reservation' ? 'block' : 'none';
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.textContent.toLowerCase().includes(tabName));
+      });
+    }
+
+    document.getElementById('queueForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const people = document.getElementById('people').value;
+      const phone = document.getElementById('phone').value;
+      addToQueue(name, people, phone);
+    });
+
+    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const rating = document.getElementById('rating').value;
+      const comment = document.getElementById('comment').value;
+      submitFeedback(rating, comment);
+    });
+
+    document.getElementById('reservationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reservationName').value;
+      const people = document.getElementById('reservationPeople').value;
+      const phone = document.getElementById('reservationPhone').value;
+      const date = new Date(document.getElementById('reservationDate').value);
+      makeReservation(name, people, phone, date);
+    });
+
+    function addToQueue(name, people, phone) {
+      if (isUserInQueue()) {
+        document.getElementById('queueInfo').innerHTML = "Você já está na fila. Não é possível entrar novamente.";
+        return;
+      }
+
+      db.collection('queue').add({
+        name: name,
+        people: people,
+        phone: phone,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then((docRef) => {
+        storeQueueInfo(docRef.id, name, people, phone);
+        updateQueuePosition(docRef.id);
+        document.getElementById('queueForm').style.display = 'none';
+        document.getElementById('feedbackForm').style.display = 'block';
+        
+        // Set up periodic update
+        setInterval(() => updateQueuePosition(docRef.id), 60000); // Update every minute
+      })
+      .catch((error) => {
+        console.error("Error adding to queue: ", error);
+        document.getElementById('queueInfo').innerHTML = "Erro ao entrar na fila. Tente novamente.";
+      });
+    }
+
+    function storeQueueInfo(id, name, people, phone) {
+      localStorage.setItem('queueInfo', JSON.stringify({ id, name, people, phone }));
+    }
+
+    function getQueueInfo() {
+      return JSON.parse(localStorage.getItem('queueInfo'));
+    }
+
+    function removeQueueInfo() {
+      localStorage.removeItem('queueInfo');
+    }
+
+    function checkQueuePosition() {
+      const queueInfo = getQueueInfo();
+      if (queueInfo) {
+        updateQueuePosition(queueInfo.id);
+      }
+    }
+
+    function updateQueuePosition(id) {
+      db.collection('queue').orderBy('timestamp').get().then((querySnapshot) => {
+        const documents = querySnapshot.docs;
+        const position = documents.findIndex(doc => doc.id === id) + 1;
+        const queueList = document.getElementById('queueList');
+        queueList.innerHTML = '<h3>Lista de Espera</h3><ol>';
+        
+        documents.forEach((doc, index) => {
+          const data = doc.data();
+          const isCurrentUser = doc.id === id;
+          const positionNumber = index + 1;
+          queueList.innerHTML += `
+            <li>
+              <span class="position-number${isCurrentUser ? ' current-user' : ''}">${positionNumber}.</span>
+              ${data.name} - ${data.people} pessoa(s)
+            </li>`;
+        });
+        
+        queueList.innerHTML += '</ol>';
+        
+        if (position > 0) {
+          document.getElementById('queueInfo').innerHTML = `Você está na posição ${position} da fila. <button onclick="leaveQueue()">Sair da fila</button>`;
+          
+          if (position === 1) {
+            showCalledAlert();
+            startRemovalCountdown();
+          }
+        } else {
+          removeQueueInfo();
+          document.getElementById('queueInfo').innerHTML = '';
+          document.getElementById('queueForm').style.display = 'block';
+          document.getElementById('queueList').innerHTML = '';
+        }
+      });
+    }
+
+    function leaveQueue() {
+      const queueInfo = getQueueInfo();
+      if (queueInfo) {
+        db.collection('queue').doc(queueInfo.id).delete().then(() => {
+          removeQueueInfo();
+          document.getElementById('queueInfo').innerHTML = 'Você saiu da fila.';
+          document.getElementById('queueForm').style.display = 'block';
+          document.getElementById('feedbackForm').style.display = 'none';
+          document.getElementById('queueList').innerHTML = '';
+        }).catch((error) => {
+          console.error("Error removing from queue: ", error);
+        });
+      }
+    }
+
+    function submitFeedback(rating, comment) {
+      db.collection('feedback').add({
+        rating: rating,
+        comment: comment,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(() => {
+        document.getElementById('feedbackForm').innerHTML = "<p>Obrigado pelo seu feedback!</p>";
+      })
+      .catch((error) => {
+        console.error("Error submitting feedback: ", error);
+        document.getElementById('feedbackForm').innerHTML = "<p>Erro ao enviar feedback. Tente novamente.</p>";
+      });
+    }
+
+    function makeReservation(name, people, phone, date) {
+      const day = date.getDay();
+      const isValidDay = day >= 2 && day <= 4; // Tuesday to Thursday
+
+      if (!isValidDay) {
+        document.getElementById('reservationInfo').innerHTML = "Reservas são permitidas apenas de terça a quinta-feira.";
+        return;
+      }
+
+      const reservationDate = date.toISOString().split('T')[0]; // Get date in YYYY-MM-DD format
+
+      db.collection('reservations').where('date', '==', reservationDate).get()
+        .then((querySnapshot) => {
+          if (querySnapshot.size >= 5) {
+            document.getElementById('reservationInfo').innerHTML = "Desculpe, todas as reservas para este dia já foram preenchidas.";
+            return;
+          }
+
+          return db.collection('reservations').add({
+            name: name,
+            people: parseInt(people),
+            phone: phone,
+            date: reservationDate,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        })
+        .then((docRef) => {
+          if (docRef) {
+            const floor = parseInt(people) > 6 ? "térreo" : "andar intermediário";
+            document.getElementById('reservationInfo').innerHTML = `Reserva confirmada! Sua mesa será no ${floor}. Lembre-se: chegada até 19h.`;
+          }
+        })
+        .catch((error) => {
+          console.error("Error making reservation: ", error);
+          document.getElementById('reservationInfo').innerHTML = "Erro ao fazer a reserva. Tente novamente.";
+        });
+    }
+
+    // Add these new functions after the existing functions
+
+    function showCalledAlert() {
+      const result = confirm("Sua vez chegou! Você tem 3 minutos para comparecer. Clique OK se você está presente ou Cancelar se precisar sair da fila.");
+      if (result) {
+        // User confirmed presence
+        alert("Obrigado por confirmar. Por favor, dirija-se ao atendimento.");
+        leaveQueue();
+      } else {
+        // User chose to leave the queue
+        leaveQueue();
+      }
+    }
+
+    function startRemovalCountdown() {
+      setTimeout(() => {
+        const queueInfo = getQueueInfo();
+        if (queueInfo) {
+          db.collection('queue').doc(queueInfo.id).get().then((doc) => {
+            if (doc.exists) {
+              // User is still in the queue after 3 minutes
+              alert("O tempo de espera expirou. Você será removido da fila.");
+              leaveQueue();
+            }
+          });
+        }
+      }, 180000); // 3 minutes in milliseconds
+    }
+
+    // Set min date for reservation to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('reservationDate').setAttribute('min', today);
+
+    // Disable weekends (Friday, Saturday, Sunday, Monday) for reservation
+    document.getElementById('reservationDate').addEventListener('input', function(e) {
+      const day = new Date(this.value).getUTCDay();
+      if ([0, 1, 5, 6].includes(day)) {
+        e.preventDefault();
+        this.value = '';
+        alert('Reservas são permitidas apenas de terça a quinta-feira.');
+      }
+    });
+
+    window.onload = checkQueuePosition;
+  </script>
+</body></html>
